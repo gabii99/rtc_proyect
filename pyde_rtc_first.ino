@@ -7,10 +7,17 @@ RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 int xyear,xmonth,xday,xhour,xminute,xsecond;
 int set_hour, set_minute, set_second;
 
+
+/*
+DateTime nowTime = rtc.now();
+int set_hour = nowTime.hour();
+int set_minute = nowTime.minute();
+int set_second = nowTime.second();
+*/
 //pin set
 const int pinButtonConfig = 2;
 const int pinButtonFormat = 3;
-const int pinButtonH = 4;
+const int pinButtonH = 4;x
 const int pinButtonM = 5;
 const int pinButtonS = 6;
 
@@ -22,6 +29,7 @@ bool secondFlag = false;
 bool aplicarFlag = false;
 bool formatHours = false;
 bool changeFormat = false;
+int a=0;
 
 void setup() {
   Serial.begin(9600);
@@ -31,7 +39,7 @@ void setup() {
    while (1);
   }
  
-  //rtc.adjust(DateTime(2000, 0, 0, 0, 0, 0)); 
+  //rtc.adjust(DateTime(__DATE__, __TIME__)); 
 
   //setting inputs
   pinMode(pinButtonConfig, INPUT);    
@@ -46,9 +54,14 @@ void loop() {
 
   //reloj funcionando MIENTRAS configFlag = false
   while(configFlag == false) {
-
-    printTime();
     
+    DateTime nowTime = rtc.now();
+    xhour = nowTime.hour();
+    xminute = nowTime.minute();
+    xsecond = nowTime.second();
+    printTime();
+
+   
     // ir a modo configuracion
     while (digitalRead(pinButtonConfig) == HIGH) {
       delay(3000);
@@ -59,6 +72,7 @@ void loop() {
     }
 
   }
+
 
   //modo configuracion
   while(configFlag == true) {
@@ -72,6 +86,8 @@ void loop() {
     aplicarFlag = false;
     changeFormat = false;
     //formatHours = false;
+
+
 
     
     //cambiar entre formato 24hs y 12hsAM/PM
@@ -196,12 +212,42 @@ void loop() {
 
 void printTime() {
   DateTime nowTime = rtc.now();      // funcion que devuelve fecha y horario en formato
+
+  //Serial.println(formatHours);
+  a=nowTime.hour();
+  //Serial.println(a);
   
-  // Muestreo
-  Serial.print(nowTime.hour());      // funcion que obtiene la hora de la fecha completa
-  Serial.print(":");       // caracter dos puntos como separador
-  Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
-  Serial.print(":");       // caracter dos puntos como separador
-  Serial.println(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
-  delay(1000);        // demora de 1 segundo
+  if ( formatHours == true && a > 12 ) {
+    a = a - 12;
+
+    // Muestreo
+    //Serial.print(nowTime.hour());      // funcion que obtiene la hora de la fecha completa
+    Serial.print(a);
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.print(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
+    Serial.print(" ");
+    Serial.println("PM");
+    delay(1000);        // demora de 1 segundo
+  } else {
+    // Muestreo
+    Serial.print(nowTime.hour());      // funcion que obtiene la hora de la fecha completa
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.println(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
+    delay(1000);        // demora de 1 segundo 
+    
+ 
+    /* Muestreo
+    Serial.print(set_hour);      // funcion que obtiene la hora de la fecha completa
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.print(set_minute);      // funcion que obtiene los minutos de la fecha completa
+    Serial.print(":");       // caracter dos puntos como separador
+    Serial.println(set_second);    // funcion que obtiene los segundos de la fecha completa
+    delay(1000);        // demora de 1 segundo
+    */
+  }
+  
 }
