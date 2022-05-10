@@ -17,7 +17,7 @@ int set_second = nowTime.second();
 //pin set
 const int pinButtonConfig = 2;
 const int pinButtonFormat = 3;
-const int pinButtonH = 4;x
+const int pinButtonH = 4;
 const int pinButtonM = 5;
 const int pinButtonS = 6;
 
@@ -29,7 +29,7 @@ bool secondFlag = false;
 bool aplicarFlag = false;
 bool formatHours = false;
 bool changeFormat = false;
-int a=0;
+int a, b;
 
 void setup() {
   Serial.begin(9600);
@@ -37,6 +37,10 @@ void setup() {
   if (! rtc.begin()) {     // si falla la inicializacion del modulo
    Serial.println("Modulo RTC no encontrado !");
    while (1);
+  }
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, let's set the time!");
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
  
   //rtc.adjust(DateTime(__DATE__, __TIME__)); 
@@ -56,9 +60,13 @@ void loop() {
   while(configFlag == false) {
     
     DateTime nowTime = rtc.now();
+    
     xhour = nowTime.hour();
     xminute = nowTime.minute();
     xsecond = nowTime.second();
+
+    
+    
     printTime();
 
    
@@ -97,7 +105,9 @@ void loop() {
       if (digitalRead(pinButtonFormat) == LOW) {
 
         Serial.println("cambió");
+        //registro algo
 
+        
         if (formatHours == false) {
           formatHours = true;
         }
@@ -212,9 +222,11 @@ void loop() {
 
 void printTime() {
   DateTime nowTime = rtc.now();      // funcion que devuelve fecha y horario en formato
+  nowTime.setClockMode(true)
 
   //Serial.println(formatHours);
-  a=nowTime.hour();
+  a = nowTime.hour();
+  
   //Serial.println(a);
   
   if ( formatHours == true && a > 12 ) {
@@ -238,7 +250,6 @@ void printTime() {
     Serial.print(":");       // caracter dos puntos como separador
     Serial.println(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
     delay(1000);        // demora de 1 segundo 
-    
  
     /* Muestreo
     Serial.print(set_hour);      // funcion que obtiene la hora de la fecha completa
