@@ -29,7 +29,6 @@ bool secondFlag = false;
 bool aplicarFlag = false;
 bool formatHours = false;
 bool changeFormat = false;
-int a, b;
 
 void setup() {
   Serial.begin(9600);
@@ -59,22 +58,25 @@ void loop() {
   //reloj funcionando MIENTRAS configFlag = false
   while(configFlag == false) {
     
+    //recuerda la configuracion del tiempo
     DateTime nowTime = rtc.now();
-    
+
     xhour = nowTime.hour();
     xminute = nowTime.minute();
     xsecond = nowTime.second();
-
-    
+   
+    set_hour = nowTime.hour();
+    set_minute = nowTime.minute();
+    set_second = nowTime.second();
     
     printTime();
-
    
     // ir a modo configuracion
     while (digitalRead(pinButtonConfig) == HIGH) {
       delay(3000);
       Serial.println("entrando al modo configuracion");
       if (digitalRead(pinButtonConfig) == HIGH) {
+         
         configFlag = true;    
       }
     }
@@ -94,9 +96,6 @@ void loop() {
     aplicarFlag = false;
     changeFormat = false;
     //formatHours = false;
-
-
-
     
     //cambiar entre formato 24hs y 12hsAM/PM
     while (digitalRead(pinButtonFormat) == HIGH && changeFormat == false) {
@@ -222,43 +221,32 @@ void loop() {
 
 void printTime() {
   DateTime nowTime = rtc.now();      // funcion que devuelve fecha y horario en formato
-  nowTime.setClockMode(true)
-
-  //Serial.println(formatHours);
-  a = nowTime.hour();
+  // Muestreo
   
-  //Serial.println(a);
-  
-  if ( formatHours == true && a > 12 ) {
-    a = a - 12;
-
-    // Muestreo
-    //Serial.print(nowTime.hour());      // funcion que obtiene la hora de la fecha completa
-    Serial.print(a);
+    if ( formatHours == true) {
+        Serial.print(nowTime.twelveHour());
+    }
+    else{
+       Serial.print(nowTime.hour()); 
+    }
+    
+        // funcion que obtiene la hora de la fecha completa
     Serial.print(":");       // caracter dos puntos como separador
     Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
     Serial.print(":");       // caracter dos puntos como separador
     Serial.print(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
     Serial.print(" ");
-    Serial.println("PM");
-    delay(1000);        // demora de 1 segundo
-  } else {
-    // Muestreo
-    Serial.print(nowTime.hour());      // funcion que obtiene la hora de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.println(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
-    delay(1000);        // demora de 1 segundo 
- 
-    /* Muestreo
-    Serial.print(set_hour);      // funcion que obtiene la hora de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.print(set_minute);      // funcion que obtiene los minutos de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.println(set_second);    // funcion que obtiene los segundos de la fecha completa
-    delay(1000);        // demora de 1 segundo
-    */
-  }
-  
+
+    if ( formatHours == true) {
+      if (nowTime.isPM() == 0){
+         Serial.println("AM");
+      }
+      else{
+        Serial.println("PM");
+      }          
+    }
+    else{
+         Serial.println("");
+    }
+    delay(1000);
 }
