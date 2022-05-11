@@ -1,11 +1,13 @@
 
 #include <Wire.h>     // incluye libreria para interfaz I2C
 #include <RTClib.h>     // incluye libreria para el manejo del modulo RTC
+#include <EEPROM.h>
 
 RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 
 int xyear,xmonth,xday,xhour,xminute,xsecond;
 int set_hour, set_minute, set_second;
+int lastState;
 
 /*
 DateTime nowTime = rtc.now();
@@ -29,6 +31,8 @@ bool aplicarFlag = false;
 bool formatHours = false;
 bool changeFormat = false;
 
+bool eepromFormat = false;
+
 void setup() {
   Serial.begin(9600);
 
@@ -40,8 +44,6 @@ void setup() {
     Serial.println("RTC lost power, let's set the time!");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
- 
-  //rtc.adjust(DateTime(__DATE__, __TIME__)); 
 
   //setting inputs
   pinMode(pinButtonConfig, INPUT);    
@@ -49,6 +51,8 @@ void setup() {
   pinMode(pinButtonH, INPUT);    
   pinMode(pinButtonM, INPUT);    
   pinMode(pinButtonS, INPUT);    
+
+  //rtc.adjust(DateTime(__DATE__, __TIME__));
 
 }
 
@@ -67,8 +71,9 @@ void loop() {
     set_hour = nowTime.hour();
     set_minute = nowTime.minute();
     set_second = nowTime.second();
-    
-    printTime();
+
+    //recuerda el estado ya escrito en el eeprom
+    lastState = EEPROM.read(0);
    
     // ir a modo configuracion
     while (digitalRead(pinButtonConfig) == HIGH) {
@@ -79,6 +84,9 @@ void loop() {
         configFlag = true;    
       }
     }
+
+    //print al final para comprobar primero alguna interrupción
+    printTime();
 
   }
 
@@ -98,14 +106,25 @@ void loop() {
     
     //cambiar entre formato 24hs y 12hsAM/PM
     while (digitalRead(pinButtonFormat) == HIGH && changeFormat == false) {
-      delay(500);
-      Serial.println("cambiando formato");
-      if (digitalRead(pinButtonFormat) == LOW) {
+      delay(1000);
+      if (digitalRead(pinButtonFormat) == HIGH) {
 
         Serial.println("cambió");
-        //registro algo
-
         
+        if ( eepromFormat == false ) {
+          eepromFormat = true;  
+          EEPROM.write(0, 39);
+          lastState = EEPROM.read(0);
+        }
+        else {
+          eepromFormat = false;
+          EEPROM.write(0, 40);
+          lastState = EEPROM.read(0);
+        }
+
+        Serial.println(eepromFormat);
+        
+        //registro algo
         if (formatHours == false) {
           formatHours = true;
         }
@@ -219,33 +238,30 @@ void loop() {
 }
 
 void printTime() {
-  DateTime nowTime = rtc.now();      // funcion que devuelve fecha y horario en formato
-  // Muestreo
-  
-    if ( formatHours == true) {
-        Serial.print(nowTime.twelveHour());
-    }
-    else{
-       Serial.print(nowTime.hour()); 
-    }
-    
-        // funcion que obtiene la hora de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.print(nowTime.minute());      // funcion que obtiene los minutos de la fecha completa
-    Serial.print(":");       // caracter dos puntos como separador
-    Serial.print(nowTime.second());    // funcion que obtiene los segundos de la fecha completa
-    Serial.print(" ");
+  DateTime nowTime = rtc.now(); 
 
-    if ( formatHours == true) {
-      if (nowTime.isPM() == 0){
-         Serial.println("AM");
-      }
-      else{
-        Serial.println("PM");
-      }          
+  if ( lastState == 39 ) {    //eepromFormat == true
+    Serial.print(nowTime.twelveHour());
+    Serial.print(":"); 
+    Serial.print(nowTime.minute());
+    Serial.print(":"); 
+    Serial.print(nowTime.second());
+    Serial.print(" ");
+    if (nowTime.isPM() == 0){
+       Serial.println("AM");
     }
     else{
-         Serial.println("");
+      Serial.println("PM");
     }
-    delay(1000);
+  }
+  if ( lastState == 40 ) {    //eepromFormat == false
+    Serial.print(nowTime.hour());
+    Serial.print(":"); 
+    Serial.print(nowTime.minute());
+    Serial.print(":"); 
+    Serial.print(nowTime.second());
+    Serial.println(" ");  
+  }
+  
+  delay(1000);
 }
