@@ -7,7 +7,6 @@ RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 int xyear,xmonth,xday,xhour,xminute,xsecond;
 int set_hour, set_minute, set_second;
 
-
 /*
 DateTime nowTime = rtc.now();
 int set_hour = nowTime.hour();
