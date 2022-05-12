@@ -23,9 +23,7 @@ bool hourFlag = false;
 bool minuteFlag = false;
 bool secondFlag = false;
 bool aplicarFlag = false;
-bool changeFormat = false;  //chequear si es necesario
-
-bool eepromFormat = false;
+bool changeFormat = false;
 
 void setup() {
   Serial.begin(9600);
@@ -52,18 +50,19 @@ void setup() {
 void loop() {
 
   while(configFlag == false) {
+
+    //para después de haber desconectado el arduino
     
     //recuerda la configuracion del tiempo
     DateTime nowTime = rtc.now();
-
+    //para poder cambiar el tiempo desde el que esta establecido
     xhour = nowTime.hour();
     xminute = nowTime.minute();
     xsecond = nowTime.second();
-   
+    //mantener los tiempos configurados
     set_hour = nowTime.hour();
     set_minute = nowTime.minute();
     set_second = nowTime.second();
-
     //recuerda el estado ya escrito en el eeprom
     lastState = EEPROM.read(0);
     
@@ -78,9 +77,7 @@ void loop() {
         configFlag = true;    
       }
     }
-
   }
-
 
   //modo configuracion
   while(configFlag == true) {
@@ -98,33 +95,25 @@ void loop() {
         rtc.adjust(DateTime(2011, 11, 11, set_hour, set_minute, set_second));
         Serial.println("cambios aplicados (soltar el botón para imprimir el tiempo)");  
         configFlag = false;
-      }
-      
+      } 
     }
-    
     //cambiar entre formato 24hs y 12hsAM/PM
     while (digitalRead(pinButtonFormat) == HIGH && changeFormat == false) {
       delay(3000);
       if (digitalRead(pinButtonFormat) == HIGH) {
-        
-        if ( eepromFormat == false ) {
-          eepromFormat = true;  
+        if ( lastState == 40 ) {
           Serial.println("formato AM/PM");
           EEPROM.write(0, 39);
           lastState = EEPROM.read(0);
         }
         else {
-          eepromFormat = false; 
           Serial.println("formato 24hs");
           EEPROM.write(0, 40);
           lastState = EEPROM.read(0);
-        }
-        
+        } 
         changeFormat = true;
-      }
-      
+      } 
     }
-
     //configurar horas
     while (digitalRead(pinButtonH) == HIGH && hourFlag == false) {
       delay(700);
@@ -142,7 +131,6 @@ void loop() {
       }
       hourFlag = true;
     }
-    
     //configurar minutos
     while (digitalRead(pinButtonM) == HIGH && minuteFlag == false) {
       delay(700);
@@ -176,16 +164,13 @@ void loop() {
         Serial.println(set_second);
       }
       secondFlag = true;
-    }
-    
+    } 
   }
-
 }
 
 void printTime() {
   DateTime nowTime = rtc.now(); 
-
-  if ( lastState == 39 ) {    //eepromFormat == true
+  if ( lastState == 39 ) {    //esta en formato AM/PM
     Serial.print(nowTime.twelveHour());
     Serial.print(":"); 
     Serial.print(nowTime.minute());
@@ -199,13 +184,13 @@ void printTime() {
       Serial.println("PM");
     }
   }
-  if ( lastState == 40 ) {    //eepromFormat == false
+  if ( lastState == 40 ) {    //esta en formato 24hs
     Serial.print(nowTime.hour());
     Serial.print(":"); 
     Serial.print(nowTime.minute());
     Serial.print(":"); 
     Serial.println(nowTime.second());
   }
-  
+  //imprimir a cada segundo
   delay(1000);
 }
