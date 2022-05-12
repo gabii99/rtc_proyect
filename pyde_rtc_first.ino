@@ -1,7 +1,6 @@
-
 #include <Wire.h>     // incluye libreria para interfaz I2C
 #include <RTClib.h>     // incluye libreria para el manejo del modulo RTC
-#include <EEPROM.h>
+#include <EEPROM.h>     // para el manejo de retención de estados
 
 RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 
