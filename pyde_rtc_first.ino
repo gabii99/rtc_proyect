@@ -5,16 +5,11 @@
 
 RTC_DS3231 rtc;     // crea objeto del tipo RTC_DS3231
 
-int xyear,xmonth,xday,xhour,xminute,xsecond;
+//variables
+int xhour,xminute,xsecond;
 int set_hour, set_minute, set_second;
 int lastState;
 
-/*
-DateTime nowTime = rtc.now();
-int set_hour = nowTime.hour();
-int set_minute = nowTime.minute();
-int set_second = nowTime.second();
-*/
 //pin set
 const int pinButtonConfig = 2;
 const int pinButtonFormat = 3;
@@ -28,8 +23,7 @@ bool hourFlag = false;
 bool minuteFlag = false;
 bool secondFlag = false;
 bool aplicarFlag = false;
-bool formatHours = false;
-bool changeFormat = false;
+bool changeFormat = false;  //chequear si es necesario
 
 bool eepromFormat = false;
 
@@ -40,7 +34,7 @@ void setup() {
    Serial.println("Modulo RTC no encontrado !");
    while (1);
   }
-  if (rtc.lostPower()) {
+  if (rtc.lostPower()) {      // si hay problemas de energia
     Serial.println("RTC lost power, let's set the time!");
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
   }
@@ -53,12 +47,10 @@ void setup() {
   pinMode(pinButtonS, INPUT);    
 
   //rtc.adjust(DateTime(__DATE__, __TIME__));
-
 }
 
 void loop() {
 
-  //reloj funcionando MIENTRAS configFlag = false
   while(configFlag == false) {
     
     //recuerda la configuracion del tiempo
@@ -74,163 +66,116 @@ void loop() {
 
     //recuerda el estado ya escrito en el eeprom
     lastState = EEPROM.read(0);
-   
+    
+    //muestrar el tiempo
+    printTime();
+    
     // ir a modo configuracion
     while (digitalRead(pinButtonConfig) == HIGH) {
       delay(3000);
-      Serial.println("entrando al modo configuracion");
-      if (digitalRead(pinButtonConfig) == HIGH) {
-         
+      if (digitalRead(pinButtonConfig) == HIGH && configFlag == false) {
+        Serial.println("modo configuración");
         configFlag = true;    
       }
     }
-
-    //print al final para comprobar primero alguna interrupción
-    printTime();
 
   }
 
 
   //modo configuracion
   while(configFlag == true) {
-    delay(300);
-    Serial.println("estoy dentro");
-
     //reset de estados 
     hourFlag = false;
     minuteFlag = false;
     secondFlag = false;
     aplicarFlag = false;
     changeFormat = false;
-    //formatHours = false;
+
+    //aplicar cambios
+    while (digitalRead(pinButtonConfig) == HIGH) {
+      delay(3000);
+      if (digitalRead(pinButtonConfig) == HIGH && configFlag == true) {
+        rtc.adjust(DateTime(2011, 11, 11, set_hour, set_minute, set_second));
+        Serial.println("cambios aplicados (soltar el botón para imprimir el tiempo)");  
+        configFlag = false;
+      }
+      
+    }
     
     //cambiar entre formato 24hs y 12hsAM/PM
     while (digitalRead(pinButtonFormat) == HIGH && changeFormat == false) {
-      delay(1000);
+      delay(3000);
       if (digitalRead(pinButtonFormat) == HIGH) {
-
-        Serial.println("cambió");
         
         if ( eepromFormat == false ) {
           eepromFormat = true;  
+          Serial.println("formato AM/PM");
           EEPROM.write(0, 39);
           lastState = EEPROM.read(0);
         }
         else {
-          eepromFormat = false;
+          eepromFormat = false; 
+          Serial.println("formato 24hs");
           EEPROM.write(0, 40);
           lastState = EEPROM.read(0);
         }
-
-        Serial.println(eepromFormat);
         
-        //registro algo
-        if (formatHours == false) {
-          formatHours = true;
-        }
-        else {
-          formatHours = false;
-        }
-        
-        changeFormat = true; 
+        changeFormat = true;
       }
       
     }
 
-    //configurar horas formato 24hs
-    while (digitalRead(pinButtonH) == HIGH && hourFlag == false && formatHours == false) {
-      delay(400);
-      
-      if (digitalRead(pinButtonH) == LOW) {
-        
-        set_hour = xhour - 1;
+    //configurar horas
+    while (digitalRead(pinButtonH) == HIGH && hourFlag == false) {
+      delay(700);
+      if (digitalRead(pinButtonH) == HIGH) {
+        xhour ++;
+        if (xhour > 23) {
+          xhour = 0;
+        }
+        Serial.println(xhour);
+      }
+      else {
+        set_hour = xhour;
         Serial.print("hora configurada ");
         Serial.println(set_hour);
-        
-        hourFlag = true;
       }
-      
-      if (xhour == 24) {
-        xhour = 0;
-      }
-      Serial.println(xhour);
-      xhour ++;
-      
-    }
-    //configurar horas formato 12hsAM/PM
-    while (digitalRead(pinButtonH) == HIGH && hourFlag == false && formatHours == true) {
-      delay(400);
-      
-      if (digitalRead(pinButtonH) == LOW) {
-        
-        set_hour = xhour - 1;
-        Serial.print("hora configurada ");
-        Serial.println(set_hour);
-        
-        hourFlag = true;
-      }
-      
-      if (xhour > 12) {
-        xhour = 0;
-      }
-      Serial.println(xhour);
-      xhour ++;
-      
+      hourFlag = true;
     }
     
     //configurar minutos
     while (digitalRead(pinButtonM) == HIGH && minuteFlag == false) {
-      delay(400);
-      
-      if (digitalRead(pinButtonM) == LOW) {
-        
-        set_minute = xminute - 1;
-        Serial.print("hora configurada ");
+      delay(700);
+      if (digitalRead(pinButtonM) == HIGH) {
+        xminute ++;
+        if (xminute >= 60) {
+          xminute = 0;
+        }
+        Serial.println(xminute);
+      }
+      else {
+        set_minute = xminute;
+        Serial.print("minuto configurado ");
         Serial.println(set_minute);
-        
-        minuteFlag = true;
       }
-      
-      if (xminute == 60) {
-        xminute = 0;
-      }
-      Serial.println(xminute);
-      xminute ++;
-      
+      minuteFlag = true; 
     }
     //configurar segundos
     while (digitalRead(pinButtonS) == HIGH && secondFlag == false) {
-      delay(400);
-      
-      if (digitalRead(pinButtonS) == LOW) {
-        
-        set_second = xsecond - 1;
-        Serial.print("hora configurada ");
+      delay(700);
+      if (digitalRead(pinButtonS) == HIGH) {
+        xsecond ++;
+        if (xsecond >= 60) {
+          xsecond = 0;
+        }
+        Serial.println(xsecond);
+      }
+      else {
+        set_second = xsecond;
+        Serial.print("segundo configurado ");
         Serial.println(set_second);
-        
-        secondFlag = true;
       }
-      
-      if (xsecond == 60) {
-        xsecond = 0;
-      }
-      Serial.println(xsecond);
-      xsecond ++;
-      
-    }
-    
-    //aplicar cambios
-    while (digitalRead(pinButtonConfig) == HIGH && aplicarFlag == false) {
-      delay(3000);
-      Serial.println("saliendo al modo configuracion");
-      if (digitalRead(pinButtonConfig) == HIGH) {
-
-        rtc.adjust(DateTime(2020, 12, 4, set_hour, set_minute, set_second));
-
-        configFlag = false; 
-        aplicarFlag = true;
-      }
-      
+      secondFlag = true;
     }
     
   }
@@ -259,8 +204,7 @@ void printTime() {
     Serial.print(":"); 
     Serial.print(nowTime.minute());
     Serial.print(":"); 
-    Serial.print(nowTime.second());
-    Serial.println(" ");  
+    Serial.println(nowTime.second());
   }
   
   delay(1000);
